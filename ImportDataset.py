@@ -10,7 +10,7 @@ import pickle
 input_variables = ['ch_iso_dsa_1', 'ch_iso_dsa_2',
        'cos_oa', 'm', 'dxy_sig', 'dphi_1', 'dphi_2',
        'dimuon_pt', 'dimuon_pt_eff', 'dimuon_fit_pt', 'dimuon_fit_pt_eff',
-       'dxy', 'dxyz',
+       'dxy', 'dxyz', 'dr',
        'pt_dsa_1', 'eta_dsa_1', 'phi_dsa_1', 'pt_dsa_2', 'eta_dsa_2',
        'phi_dsa_2', 'lead_muon_eta', 'lead_muon_phi']
 
