@@ -7,6 +7,6 @@ activation: relu
 use_batch_norm: true
 dropout: 0.2
 n_common_layers: 3
-n_common_units: 10
+n_common_units: 40
 n_adv_layers: 3
-n_adv_units: 10
+n_adv_units: 20

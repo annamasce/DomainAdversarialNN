@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     # Load the validation dataset
     dataset_val = tf.data.Dataset.load(args.dataset_val, compression='GZIP')
-    x_val, y_val = tuple(zip(*dataset_val))
+    x_val, y_val, w_val = tuple(zip(*dataset_val))
     x_val = np.array(x_val)
     y_val = np.array(y_val)
 

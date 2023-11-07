@@ -88,14 +88,14 @@ class AdversarialModel(keras.Model):
     return class_output, adv_output
 
   def _step(self, data, training):
-    x, y = data
+    x, y, w = data
 
     ones = tf.ones_like(y)
     zeros = tf.zeros_like(y)
-    w_class = tf.where((y == 0) | (y == 1), ones, zeros)
-    w_adv = tf.where((y == 0) | (y == 2), ones, zeros)
-    y_class = tf.where(y == 0 , zeros, ones)
-    y_adv = tf.where(y == 0, ones, zeros)
+    w_class = tf.where((y == 0) | (y == 1), w, zeros)
+    w_adv = tf.where((y == 0) | (y == 2), w, zeros)
+    y_class = tf.where((y == 0) | (y == 2), zeros, ones)
+    y_adv = tf.where((y == 0), ones, zeros)
 
     def compute_losses():
       y_pred_class, y_pred_adv = self(x, training=training)
@@ -197,7 +197,7 @@ if __name__ == "__main__":
   ds_val = dataset_val.batch(args.batch_size)
 
   for data in ds_train.take(1):
-    x, y = data
+    x, y, w = data
     model(x)
     break
 
