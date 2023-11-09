@@ -43,7 +43,7 @@ def plot_train_history(model_path, output_path):
         plt.plot(epochs, class_acc_train, label='Train sample', color='purple', linestyle='-')
         plt.plot(epochs, class_acc_val, label='Validation sample', color='purple', linestyle='--')
         plt.legend()
-        plt.ylabel('Area under the ROC')
+        plt.ylabel('Accuracy')
         plt.xlabel('epochs')
         plt.yscale('log')
         plt.tight_layout()
@@ -76,25 +76,30 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     model_tag = args.model_tag
-    model_path = f'data/{model_tag}/model/'
+    model_path = f'data/{model_tag}'
 
     # Create directory to save output plots
     output_path = f'plots/{model_tag}/'
     os.makedirs(output_path, exist_ok=True)
 
     # Load the trained model
-    model = tf.keras.models.load_model(os.path.join(model_path, 'best'))
+    model = tf.keras.models.load_model(os.path.join(model_path, 'model/best'))
     # Check its architecture
     print(model.summary())
 
     # Load the validation dataset
     dataset_val = tf.data.Dataset.load(args.dataset_val, compression='GZIP')
-    x_val, y_val, w_val = tuple(zip(*dataset_val))
+    dataset_tuple = tuple(zip(*dataset_val))
+    if len(dataset_tuple) == 2:
+        x_val, y_val = dataset_tuple
+    else:
+        x_val, y_val, _ = dataset_tuple
     x_val = np.array(x_val)
     y_val = np.array(y_val)
 
     # Make predictions (NN score) on the validation set using the model
     val_predictions = np.array(model.predict(x_val)[0])
+    print(val_predictions.shape)
 
     # Plot the NN score on signal and background distribution
     plt.hist(val_predictions[y_val==0], color='blue', range=[0, 1], bins=100, density=True, alpha=0.7, label='Data in sideband')
@@ -103,6 +108,18 @@ if __name__ == "__main__":
     plt.xlabel('NN score')
     plt.legend()
     plt.savefig(os.path.join(output_path, 'NN_score_val.pdf'))
+    plt.close()
+
+    val_predictions_adv = np.array(model.predict(x_val)[1])
+    print(val_predictions_adv)
+    print(val_predictions_adv.shape)
+    # Plot the asversarial NN score on background in signal region and sideband
+    plt.hist(val_predictions_adv[y_val==0], color='blue', range=[0, 1], bins=100, density=True, alpha=0.7, label='Data in sideband')
+    plt.hist(val_predictions_adv[y_val==2], color='red', range=[0, 1], bins=100, density=True, alpha=0.7, label='Data in signal region')
+    # plt.yscale('log')
+    plt.xlabel('Adv. NN score')
+    plt.legend()
+    plt.savefig(os.path.join(output_path, 'NN_score_val_adv.pdf'))
     plt.close()
 
     # Plot training history of the model

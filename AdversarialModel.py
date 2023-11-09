@@ -21,6 +21,8 @@ from tensorflow import keras
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.callbacks import CSVLogger
 
+tf.config.set_visible_devices([], 'GPU')
+
 @tf.function
 def binary_entropy(target, output):
   epsilon = tf.constant(1e-7, dtype=tf.float32)
@@ -88,7 +90,11 @@ class AdversarialModel(keras.Model):
     return class_output, adv_output
 
   def _step(self, data, training):
-    x, y, w = data
+    if len(data) == 2:
+      x, y = data
+      w = tf.ones_like(y)
+    else:
+      x, y, w = data
 
     ones = tf.ones_like(y)
     zeros = tf.zeros_like(y)
@@ -197,7 +203,10 @@ if __name__ == "__main__":
   ds_val = dataset_val.batch(args.batch_size)
 
   for data in ds_train.take(1):
-    x, y, w = data
+    if len(data) == 2:
+      x, y = data
+    else:
+      x, y, w = data
     model(x)
     break
 

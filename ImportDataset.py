@@ -8,9 +8,9 @@ import pandas as pd
 import pickle
 
 input_variables = ['ch_iso_dsa_1', 'ch_iso_dsa_2',
-       'cos_oa', 'm', 'dxy_sig', 'dphi_1', 'dphi_2',
+       'cos_oa', 'm', 'dr', 'dphi_1', 'dphi_2',
        'dimuon_pt', 'dimuon_pt_eff', 'dimuon_fit_pt', 'dimuon_fit_pt_eff',
-       'dxy', 'dxyz', 'dr',
+       'dxy', 'dxyz', 'dxy_sig',
        'pt_dsa_1', 'eta_dsa_1', 'phi_dsa_1', 'pt_dsa_2', 'eta_dsa_2',
        'phi_dsa_2', 'lead_muon_eta', 'lead_muon_phi']
 
@@ -19,7 +19,7 @@ def split_even_odd(data):
     even_mask = np.where(evt_nbr % 2 == 0, True, False)
     odd_mask = np.where(evt_nbr % 2 == 1, True, False)
 
-    return data[even_mask], data[odd_mask]
+    return even_mask, odd_mask
 
 if __name__ == '__main__':
     import argparse
@@ -33,11 +33,18 @@ if __name__ == '__main__':
     with open(f'{args.input}', 'rb') as f:
         df_dict = pickle.load(f)
     df_bkg_sideband = df_dict['Data_C']
+    # apply bjet cut
+    df_bkg_sideband = df_bkg_sideband[df_bkg_sideband['n_bjets']==0]
     print(len(df_bkg_sideband))
     bkg_sum = len(df_bkg_sideband)
     df_bkg_sigReg = df_dict['Data_A']
+    # apply bjet cut
+    df_bkg_sigReg = df_bkg_sigReg[df_bkg_sigReg['n_bjets']==0]
     print(len(df_bkg_sigReg))
+    bkg_sum_sigReg = len(df_bkg_sigReg)
     df_sig = pd.concat([df_dict['HNL1'], df_dict['HNL2'], df_dict['HNL3'], df_dict['HNL4'], df_dict['HNL5'], df_dict['HNL6']], ignore_index=True)
+    # apply bjet cut
+    df_sig = df_sig[df_sig['n_bjets']==0]
     print(len(df_sig))
     sig_sum = len(df_sig)
 
@@ -54,15 +61,15 @@ if __name__ == '__main__':
     weight_column_name = 'sample_weight'
     # 1 for background in sideband
     df_bkg_sideband[weight_column_name] = np.ones(len(df_bkg_sideband), dtype=np.float32)
-    # 1 for background in signal region
-    df_bkg_sigReg[weight_column_name] = np.ones(len(df_bkg_sigReg), dtype=np.float32)
+    # sumBkg/sumBkg_sigReg for data in signal region
+    df_bkg_sigReg[weight_column_name] = np.ones(len(df_bkg_sigReg), dtype=np.float32) * np.array(bkg_sum/bkg_sum_sigReg, dtype=np.float32)
     # sumBkg/sumSig for signal
     df_sig[weight_column_name] = np.ones(len(df_sig), dtype=np.float32) * np.array(bkg_sum/sig_sum, dtype=np.float32)
 
     # Put all data toghether and split by even and odd event numbers
     df_all = pd.concat([df_bkg_sideband, df_bkg_sigReg, df_sig], ignore_index=True)
-    df_all_even, df_all_odd = split_even_odd(df_all)
-    train_samples_dict = {'even_v2': df_all_even, 'odd_v2': df_all_odd}
+    even_mask, odd_mask = split_even_odd(df_all)
+    train_samples_dict = {'even_v2': df_all[even_mask], 'odd_v2': df_all[odd_mask]}
 
     for key, df in train_samples_dict.items():
         data = np.array(df[[target_column_name, weight_column_name] + input_variables], dtype=np.float32)
