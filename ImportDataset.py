@@ -79,7 +79,7 @@ if __name__ == '__main__':
     # Put all data toghether and split by even and odd event numbers
     df_all = pd.concat([df_bkg_sideband, df_bkg_sigReg, df_sig], ignore_index=True)
     even_mask, odd_mask = split_even_odd(df_all)
-    train_samples_dict = {'even': df_all[even_mask], 'odd': df_all[odd_mask]}
+    train_samples_dict = {'even_v3': df_all[even_mask], 'odd_v3': df_all[odd_mask]}
 
     for key, df in train_samples_dict.items():
         data = np.array(df[[target_column_name, weight_column_name_class, weight_column_name_adv] + input_variables], dtype=np.float32)

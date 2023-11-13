@@ -99,7 +99,6 @@ class AdversarialModel(keras.Model):
       w_s_class = w[:, 0]
       w_s_adv = w[:, 1]
 
-
     ones = tf.ones_like(y)
     zeros = tf.zeros_like(y)
     w_class = tf.where((y == 0) | (y == 1), w_s_class, zeros)
@@ -192,8 +191,10 @@ if __name__ == "__main__":
   with open(args.cfg) as f:
     cfg = yaml.safe_load(f)
 
-  cfg['adv_grad_factor'] = args.adv_grad_factor if args.adv_grad_factor is not None else 0
-  cfg['class_grad_factor'] = args.class_grad_factor if args.class_grad_factor is not None else 1
+  if args.adv_grad_factor is not None:
+    cfg['adv_grad_factor'] = args.adv_grad_factor
+  if args.class_grad_factor is not None:
+    cfg['class_grad_factor'] = args.class_grad_factor
 
   model = AdversarialModel(cfg)
   model.compile(loss=None,
