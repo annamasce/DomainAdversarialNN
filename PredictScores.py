@@ -15,9 +15,9 @@ def main():
     output_path = './' 
     model_tags = {
         # Model trained on even event numbers
-        'even': '2023-11-08T182049',
+        'even': '2023-11-09T140603',
         # Model trained on odd event numbers
-        'odd': '2023-11-08T182307'
+        'odd': '2023-11-09T140930'
     }
 
     models = {}
@@ -55,7 +55,7 @@ def main():
     plt.savefig('test.pdf')
 
     # Save dataframes with NN score 
-    with open(output_path + 'df_231024_Run2_2018_noTimeSel_withNN.pkl', 'wb') as f:
+    with open(output_path + 'df_231024_Run2_2018_noTimeSel_withNN_noAdv.pkl', 'wb') as f:
         pickle.dump(df_dict, f)
 
 if __name__ == '__main__':

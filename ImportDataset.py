@@ -58,29 +58,39 @@ if __name__ == '__main__':
     df_sig[target_column_name] = np.ones(len(df_sig), dtype=np.float32)
 
     # Add sample weights column (to balance datasets)
-    weight_column_name = 'sample_weight'
-    # 1 for background in sideband
-    df_bkg_sideband[weight_column_name] = np.ones(len(df_bkg_sideband), dtype=np.float32)
-    # sumBkg/sumBkg_sigReg for data in signal region
-    df_bkg_sigReg[weight_column_name] = np.ones(len(df_bkg_sigReg), dtype=np.float32) * np.array(bkg_sum/bkg_sum_sigReg, dtype=np.float32)
-    # sumBkg/sumSig for signal
-    df_sig[weight_column_name] = np.ones(len(df_sig), dtype=np.float32) * np.array(bkg_sum/sig_sum, dtype=np.float32)
+    weight_column_name_class = 'sample_weight_class'
+    weight_column_name_adv = 'sample_weight_adv'
+    df_bkg_sideband[weight_column_name_class] = np.ones(len(df_bkg_sideband), dtype=np.float32) * np.array((bkg_sum + sig_sum)/(2 * bkg_sum), dtype=np.float32)
+    df_bkg_sideband[weight_column_name_adv] = np.ones(len(df_bkg_sideband), dtype=np.float32) * np.array((bkg_sum + bkg_sum_sigReg)/(2 * bkg_sum), dtype=np.float32)
+    
+    df_bkg_sigReg[weight_column_name_class] = np.ones(len(df_bkg_sigReg), dtype=np.float32) 
+    df_bkg_sigReg[weight_column_name_adv] = np.ones(len(df_bkg_sigReg), dtype=np.float32) * np.array((bkg_sum_sigReg + bkg_sum)/(2 * bkg_sum_sigReg), dtype=np.float32)
+    
+    df_sig[weight_column_name_class] = np.ones(len(df_sig), dtype=np.float32) * np.array((sig_sum + bkg_sum)/(2 * sig_sum), dtype=np.float32)
+    df_sig[weight_column_name_adv] = np.ones(len(df_sig), dtype=np.float32) 
+
+    # Check weights
+    print('Sum weights bkg sideband for adv. task:\t', np.sum(df_bkg_sideband[weight_column_name_adv]))
+    print('Sum weights bkg sig.reg. for adv. task:\t', np.sum(df_bkg_sigReg[weight_column_name_adv]))
+
+    print('Sum weights bkg sideband for classification:\t', np.sum(df_bkg_sideband[weight_column_name_class]))
+    print('Sum weights signal for classification:\t', np.sum(df_sig[weight_column_name_class]))
 
     # Put all data toghether and split by even and odd event numbers
     df_all = pd.concat([df_bkg_sideband, df_bkg_sigReg, df_sig], ignore_index=True)
     even_mask, odd_mask = split_even_odd(df_all)
-    train_samples_dict = {'even_v2': df_all[even_mask], 'odd_v2': df_all[odd_mask]}
+    train_samples_dict = {'even': df_all[even_mask], 'odd': df_all[odd_mask]}
 
     for key, df in train_samples_dict.items():
-        data = np.array(df[[target_column_name, weight_column_name] + input_variables], dtype=np.float32)
+        data = np.array(df[[target_column_name, weight_column_name_class, weight_column_name_adv] + input_variables], dtype=np.float32)
         # Shuffling in place
         np.random.shuffle(data)
         # First column corresponds to target
         y = data[:, 0]
-        # Second column corresponds to sample weights
-        w = data[:, 1]
+        # Second and third columns corresponds to sample weights
+        w = data[:, 1:3]
         # All other columns correspond to input features
-        x = data[:, 2:]
+        x = data[:, 3:]
         dataset = tf.data.Dataset.from_tensor_slices((x, y, w))
         for element in dataset.take(1):
             print(element)
