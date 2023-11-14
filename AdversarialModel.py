@@ -167,6 +167,21 @@ class AdversarialModel(keras.Model):
 def save_predicate(model, logs):
   return abs(logs['val_adv_accuracy'] - 0.5) < 0.01
 
+def always_save_predicate(model, logs):
+  return True
+
+# def rescale_adv_weights(model, dataset):
+#   dataset_tuple = tuple(zip(*dataset))
+#   if len(dataset_tuple) == 2:
+#       x, y = dataset_tuple
+#       w = np.array(np.ones((2, len(y))))
+#   else:
+#       x, y, w = dataset_tuple
+#   x = np.array(x)
+#   y = np.array(y)
+#   class_scores = np.array(model.predict(x)[0])
+#   w_adv = np.array()
+
 if __name__ == "__main__":
   import argparse
 
@@ -181,6 +196,7 @@ if __name__ == "__main__":
   parser.add_argument('--dataset-val', required=False, default='data/val', type=str)
   parser.add_argument('--adv-grad-factor', required=False, type=float, default=None)
   parser.add_argument('--class-grad-factor', required=False, type=float, default=None)
+  parser.add_argument('--pre-training-tag', required=False, default=None, type=str)
 
   parser.add_argument('--summary-only', required=False, action='store_true')
   args = parser.parse_args()
@@ -213,13 +229,16 @@ if __name__ == "__main__":
     else:
       x, y, w = data
     model(x)
-    print(w.shape)
     break
 
   model.summary()
   if args.summary_only:
     sys.exit(0)
 
+  if args.pre_training_tag is not None:
+    # Use a pre-trained model as starting point
+    trained_model = tf.keras.models.load_model(os.path.join('data', args.pre_training_tag, 'model/best'))
+    model.set_weights(trained_model.get_weights()) 
 
   output_root = 'data'
   timestamp_str = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
@@ -228,16 +247,22 @@ if __name__ == "__main__":
     raise RuntimeError(f'Output directory {dirFile} already exists')
   os.makedirs(dirFile)
 
-  shutil.copy(args.cfg, dirFile)
+  # save cfg as used to create the model
+  with open(os.path.join(dirFile, 'cfg.yaml'), 'w') as cfg_dest:
+        yaml.dump(cfg, cfg_dest, default_flow_style=False)
   shutil.copy('AdversarialModel.py', dirFile)
 
   modelDirFile = os.path.join(dirFile, 'model')
   print(dirFile)
 
+  # Set condition to be checked when saving best model
+  predicate = save_predicate
+  if model.adv_grad_factor == 0:
+    predicate = always_save_predicate
 
   callbacks = [
     ModelCheckpoint(modelDirFile, verbose=1, monitor="val_class_loss", mode='min', min_rel_delta=1e-3,
-                    patience=args.patience, save_callback=None, predicate=save_predicate),
+                    patience=args.patience, save_callback=None, predicate=predicate),
     tf.keras.callbacks.CSVLogger(os.path.join(dirFile, 'training_log.csv'), append=True),
   ]
 

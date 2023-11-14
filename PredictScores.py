@@ -11,13 +11,13 @@ import matplotlib.pyplot as plt
 from ImportDataset import split_even_odd, input_variables
 
 def main():
-    input_path = '../analysis_sample/df_231024_Run2_2018_noTimeSel.pkl'  
-    output_path = './' 
+    input_path = '/afs/cern.ch/work/a/amascell/HNLanalysis/hnl-coffea/results/df_231024_Run2_2018_noTimeSel.pkl'  
+    output_path = '../dataframes/' 
     model_tags = {
         # Model trained on even event numbers
-        'even': '2023-11-09T140603',
+        'even': '2023-11-14T112242',
         # Model trained on odd event numbers
-        'odd': '2023-11-09T140930'
+        'odd': '2023-11-14T114256'
     }
 
     models = {}
@@ -55,7 +55,7 @@ def main():
     plt.savefig('test.pdf')
 
     # Save dataframes with NN score 
-    with open(output_path + 'df_231024_Run2_2018_noTimeSel_withNN_noAdv.pkl', 'wb') as f:
+    with open(output_path + 'df_231024_Run2_2018_noTimeSel_withNN_231114.pkl', 'wb') as f:
         pickle.dump(df_dict, f)
 
 if __name__ == '__main__':
